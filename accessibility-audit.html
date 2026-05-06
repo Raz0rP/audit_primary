@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit Accessibilité — Primary App</title>
+<style>
+  :root {
+    --plum: #3A1C33;
+    --yellow: #EFC712;
+    --bg: #f8f7f9;
+    --card: #ffffff;
+    --border: #e8e0eb;
+    --text: #1a1a1a;
+    --muted: #646464;
+    --critical: #b91c1c;
+    --critical-bg: #fef2f2;
+    --critical-border: #fca5a5;
+    --high: #c2410c;
+    --high-bg: #fff7ed;
+    --high-border: #fdba74;
+    --medium: #b45309;
+    --medium-bg: #fffbeb;
+    --medium-border: #fcd34d;
+    --low: #1d4ed8;
+    --low-bg: #eff6ff;
+    --low-border: #93c5fd;
+    --pass: #15803d;
+    --pass-bg: #f0fdf4;
+    --pass-border: #86efac;
+    --radius: 10px;
+    --shadow: 0 1px 4px rgba(58,28,51,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  a { color: var(--plum); }
+
+  /* ── Header ── */
+  .site-header {
+    background: var(--plum);
+    color: white;
+    padding: 40px 48px 32px;
+  }
+  .site-header h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+  .site-header .meta { opacity: .75; font-size: 13px; display: flex; gap: 24px; flex-wrap: wrap; margin-top: 10px; }
+  .site-header .meta span::before { content: '· '; }
+  .site-header .meta span:first-child::before { content: ''; }
+
+  /* ── Layout ── */
+  .layout { display: grid; grid-template-columns: 260px 1fr; gap: 0; min-height: calc(100vh - 130px); }
+  .sidebar {
+    background: var(--plum);
+    padding: 28px 20px 40px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .sidebar h2 { color: rgba(255,255,255,.45); font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; margin: 20px 0 8px; font-weight: 600; }
+  .sidebar h2:first-child { margin-top: 0; }
+  .sidebar a {
+    display: block;
+    color: rgba(255,255,255,.8);
+    text-decoration: none;
+    font-size: 13px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    transition: background .15s;
+  }
+  .sidebar a:hover { background: rgba(255,255,255,.12); color: white; }
+  .main { padding: 0 48px 80px; max-width: 960px; }
+
+  /* ── Tab bar ── */
+  .tab-bar-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    padding: 18px 0 14px;
+    margin-bottom: 36px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    border-radius: 40px;
+    border: 1.5px solid var(--border);
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    transition: all .18s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover {
+    border-color: var(--plum);
+    color: var(--plum);
+  }
+  .tab-btn.active {
+    background: var(--plum);
+    border-color: var(--plum);
+    color: white;
+  }
+  .tab-btn .tab-icon { font-size: 15px; line-height: 1; }
+  .tab-btn .tab-count {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 20px;
+    background: rgba(0,0,0,.08);
+    min-width: 20px;
+    text-align: center;
+  }
+  .tab-btn.active .tab-count { background: rgba(255,255,255,.2); }
+
+  /* ── Empty state ── */
+  .empty-state {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty-state .empty-icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-state p { font-size: 15px; }
+
+  /* ── Sections ── */
+  section { margin-bottom: 60px; }
+  section.severity-group { margin-bottom: 40px; }
+  .section-heading {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--plum);
+    margin-bottom: 6px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+    margin-top: 0;
+  }
+  .section-heading-wrap { margin-bottom: 20px; margin-top: 40px; }
+  .section-heading-wrap:first-child { margin-top: 0; }
+  section h3 { font-size: 16px; font-weight: 600; color: var(--text); margin: 28px 0 12px; }
+
+  /* ── Summary ── */
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 24px 0 32px; }
+  .summary-card { border-radius: var(--radius); padding: 20px 16px; text-align: center; border: 1px solid; }
+  .summary-card .count { font-size: 36px; font-weight: 800; line-height: 1; }
+  .summary-card .label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; margin-top: 6px; }
+  .summary-card.critical { background: var(--critical-bg); border-color: var(--critical-border); color: var(--critical); }
+  .summary-card.high { background: var(--high-bg); border-color: var(--high-border); color: var(--high); }
+  .summary-card.medium { background: var(--medium-bg); border-color: var(--medium-border); color: var(--medium); }
+  .summary-card.low { background: var(--low-bg); border-color: var(--low-border); color: var(--low); }
+
+  /* ── Issue cards ── */
+  .issue {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: opacity .15s;
+  }
+  .issue.hidden { display: none; }
+  .issue-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .issue-header:hover { background: #fafafa; }
+  .badge {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .badge.critical { background: var(--critical-bg); color: var(--critical); border: 1px solid var(--critical-border); }
+  .badge.high { background: var(--high-bg); color: var(--high); border: 1px solid var(--high-border); }
+  .badge.medium { background: var(--medium-bg); color: var(--medium); border: 1px solid var(--medium-border); }
+  .badge.low { background: var(--low-bg); color: var(--low); border: 1px solid var(--low-border); }
+
+  /* Category tag on card */
+  .cat-tags { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+  .cat-tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+    letter-spacing: .3px;
+  }
+  .cat-tag.screen-reader { background: #ede9fe; color: #5b21b6; }
+  .cat-tag.contrast { background: #fce7f3; color: #9d174d; }
+  .cat-tag.text-size { background: #e0f2fe; color: #0369a1; }
+  .cat-tag.motion { background: #d1fae5; color: #065f46; }
+  .cat-tag.cognitive { background: #fef9c3; color: #854d0e; }
+
+  .issue-title { font-weight: 600; font-size: 15px; flex: 1; }
+  .issue-subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .toggle-icon { color: var(--muted); font-size: 18px; flex-shrink: 0; transition: transform .2s; margin-top: 2px; }
+  .issue-body { padding: 0 20px 20px; border-top: 1px solid var(--border); display: none; }
+  .issue-body.open { display: block; }
+  .issue.open .toggle-icon { transform: rotate(180deg); }
+
+  /* Impact block */
+  .impact {
+    margin-top: 14px;
+    background: #faf8fc;
+    border-left: 3px solid var(--plum);
+    padding: 12px 14px;
+    border-radius: 0 6px 6px 0;
+    font-size: 14px;
+    color: #333;
+  }
+  .impact strong { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--plum); margin-bottom: 4px; }
+
+  .criteria { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 0; }
+  .criteria span {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: #f0ecf3;
+    color: var(--plum);
+    font-weight: 500;
+  }
+
+  .locations { margin: 14px 0 0; }
+  .locations strong { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); display: block; margin-bottom: 6px; }
+  .location-tag {
+    display: inline-block;
+    background: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    padding: 2px 8px;
+    margin: 2px 3px 2px 0;
+    color: #3a1c33;
+  }
+
+  pre {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 12.5px;
+    overflow-x: auto;
+    margin: 14px 0 0;
+    line-height: 1.5;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .code-bad { color: #f38ba8; }
+  .code-good { color: #a6e3a1; }
+  .code-comment { color: #6c7086; }
+
+  .fix-block {
+    background: var(--pass-bg);
+    border: 1px solid var(--pass-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 14px 0 0;
+    font-size: 13.5px;
+  }
+  .fix-block strong { color: var(--pass); display: block; margin-bottom: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .6px; }
+
+  .contrast-table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13px; }
+  .contrast-table th { background: #f0ecf3; color: var(--plum); padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .6px; }
+  .contrast-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .contrast-table tr:last-child td { border-bottom: none; }
+  .swatch { display: inline-block; width: 16px; height: 16px; border-radius: 3px; vertical-align: middle; margin-right: 6px; border: 1px solid rgba(0,0,0,.1); }
+  .pass-cell { color: var(--pass); font-weight: 600; }
+  .fail-cell { color: var(--critical); font-weight: 600; }
+  .warn-cell { color: var(--medium); font-weight: 600; }
+
+  .intro { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 24px; font-size: 14px; color: #444; }
+  .intro p + p { margin-top: 8px; }
+  .note { font-size: 13px; color: var(--muted); margin-top: 12px; }
+
+  @media (max-width: 800px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .main { padding: 0 20px 60px; }
+    .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <h1>Audit Accessibilité — Primary App</h1>
+  <div class="meta">
+    <span>Application Flutter iOS / Android</span>
+    <span>Date : 6 mai 2026</span>
+    <span>Référentiels : WCAG 2.1 AA · RGAA 4.1 · Apple HIG · Material</span>
+    <span>Branche : <code>main</code></span>
+  </div>
+</header>
+
+<div class="layout">
+<nav class="sidebar" aria-label="Navigation de l'audit">
+  <h2>Vue d'ensemble</h2>
+  <a href="#synthese">Synthèse</a>
+  <a href="#contrast">Contrastes couleurs</a>
+  <a href="#methodology">Méthodologie</a>
+
+  <h2>Critique</h2>
+  <a href="#A1">A1 · Photos de profil sans description</a>
+  <a href="#A2">A2 · Zone de tap invisible (documents)</a>
+  <a href="#A3">A3 · Case CGU non liée à son texte</a>
+  <a href="#A4">A4 · Bouton de sélection — état muet</a>
+  <a href="#A5">A5 · Barre de progression muette</a>
+  <a href="#A6">A6 · Liste messagerie — items non lus</a>
+
+  <h2>Priorité haute</h2>
+  <a href="#B1">B1 · Contrastes insuffisants</a>
+  <a href="#B2">B2 · Carte RDV — lecture fragmentée</a>
+  <a href="#B3">B3 · Carte document — lecture fragmentée</a>
+  <a href="#B4">B4 · Champ de saisie — label non lié</a>
+  <a href="#B5">B5 · Spinner de chargement muet</a>
+  <a href="#B6">B6 · Titre de BottomSheet non structuré</a>
+  <a href="#B7">B7 · Agrandissement de texte ignoré</a>
+
+  <h2>Priorité moyenne</h2>
+  <a href="#C1">C1 · Animations non réductibles</a>
+  <a href="#C2">C2 · Progression d'étape muette</a>
+  <a href="#C3">C3 · Titres de section non structurés</a>
+  <a href="#C4">C4 · Images décoratives parasites</a>
+  <a href="#C5">C5 · Onglets sans état sélectionné</a>
+  <a href="#C6">C6 · Boutons icône sans intitulé</a>
+  <a href="#C7">C7 · Bouton en cours de chargement</a>
+  <a href="#C8">C8 · Zones tactiles trop petites</a>
+  <a href="#C9">C9 · Surcharge cognitive — écrans denses</a>
+  <a href="#C10">C10 · Mode sombre — contrastes non vérifiés</a>
+  <a href="#C11">C11 · Messages d'erreur insuffisants</a>
+
+  <h2>Priorité basse</h2>
+  <a href="#D1">D1 · Séparateur bullet dans la lecture</a>
+  <a href="#D2">D2 · Texte d'erreur hardcodé</a>
+  <a href="#D3">D3 · Swipe de navigation désactivé</a>
+  <a href="#D4">D4 · Interlignage et longueur de ligne</a>
+</nav>
+
+<main class="main">
+
+  <!-- ══════════════ TAB BAR ══════════════ -->
+  <div class="tab-bar-wrap">
+    <div class="tab-bar" role="tablist">
+      <button class="tab-btn active" data-cat="all" role="tab" aria-selected="true">
+        <span class="tab-icon">☰</span> Toutes
+        <span class="tab-count">28</span>
+      </button>
+      <button class="tab-btn" data-cat="screen-reader" role="tab" aria-selected="false">
+        <span class="tab-icon">🔊</span> Lecteur d'écran
+        <span class="tab-count">18</span>
+      </button>
+      <button class="tab-btn" data-cat="contrast" role="tab" aria-selected="false">
+        <span class="tab-icon">🎨</span> Contraste & couleurs
+        <span class="tab-count">2</span>
+      </button>
+      <button class="tab-btn" data-cat="text-size" role="tab" aria-selected="false">
+        <span class="tab-icon">🔤</span> Taille & lisibilité
+        <span class="tab-count">3</span>
+      </button>
+      <button class="tab-btn" data-cat="motion" role="tab" aria-selected="false">
+        <span class="tab-icon">✨</span> Animations
+        <span class="tab-count">1</span>
+      </button>
+      <button class="tab-btn" data-cat="cognitive" role="tab" aria-selected="false">
+        <span class="tab-icon">🧠</span> Surcharge cognitive
+        <span class="tab-count">4</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════ SYNTHÈSE ══════════════ -->
+  <section id="synthese" data-always-visible>
+    <h2 class="section-heading">Synthèse</h2>
+    <div class="summary-grid">
+      <div class="summary-card critical"><div class="count">6</div><div class="label">Critique</div></div>
+      <div class="summary-card high"><div class="count">7</div><div class="label">Haute</div></div>
+      <div class="summary-card medium"><div class="count">11</div><div class="label">Moyenne</div></div>
+      <div class="summary-card low"><div class="count">4</div><div class="label">Basse</div></div>
+    </div>
+    <div class="intro">
+      <p>L'audit couvre les 28 écrans principaux et les composants partagés (<code>bento</code> + <code>app/lib/widgets</code>). Il s'appuie sur une lecture statique du code, croisée avec les tokens de design Bento.</p>
+      <p><strong>À traiter en priorité :</strong> les 6 issues critiques bloquent des utilisateurs sur des flux essentiels (connexion, messagerie, rendez-vous). Les 7 issues hautes touchent tous les utilisateurs — notamment ceux qui agrandissent le texte sur leur téléphone, qui sont beaucoup plus nombreux que les utilisateurs de lecteur d'écran.</p>
+    </div>
+    <h3>Répartition par domaine</h3>
+    <table class="contrast-table">
+      <thead><tr><th>Domaine</th><th>Critique</th><th>Haute</th><th>Moyenne</th><th>Basse</th></tr></thead>
+      <tbody>
+        <tr><td>Composants partagés (bento + app)</td><td>3</td><td>4</td><td>2</td><td>2</td></tr>
+        <tr><td>Connexion / Login</td><td>1</td><td>1</td><td>2</td><td>1</td></tr>
+        <tr><td>Messagerie</td><td>1</td><td>1</td><td>2</td><td>0</td></tr>
+        <tr><td>Rendez-vous</td><td>0</td><td>0</td><td>2</td><td>0</td></tr>
+        <tr><td>Documents</td><td>1</td><td>1</td><td>2</td><td>0</td></tr>
+        <tr><td>Santé / Bilans</td><td>0</td><td>0</td><td>1</td><td>1</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ══════════════ CONTRASTES ══════════════ -->
+  <section id="contrast" data-always-visible>
+    <h2 class="section-heading">Contrastes couleurs</h2>
+    <div class="intro">
+      <p>Le ratio de contraste mesure la différence de luminosité entre un texte et son fond. En dessous de 4.5:1, le texte devient difficile à lire pour des personnes malvoyantes, âgées, ou dans de mauvaises conditions d'éclairage (soleil, écran bas). Le seuil WCAG AA est 4.5:1 pour le texte courant, 3:1 pour les grands titres et les icônes.</p>
+    </div>
+    <table class="contrast-table">
+      <thead><tr><th>Texte</th><th>Fond</th><th>Ratio</th><th>Résultat</th><th>Utilisations</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="swatch" style="background:#3A1C33"></span>#3A1C33 prune</td>
+          <td><span class="swatch" style="background:#EFC712;border-color:#ccc"></span>#EFC712 jaune</td>
+          <td><strong>8.5:1</strong></td>
+          <td class="pass-cell">✓ Excellent</td>
+          <td>Bouton principal (fond clair)</td>
+        </tr>
+        <tr>
+          <td><span class="swatch" style="background:#ffffff;border-color:#ccc"></span>#ffffff blanc</td>
+          <td><span class="swatch" style="background:#3A1C33"></span>#3A1C33 prune</td>
+          <td><strong>13.8:1</strong></td>
+          <td class="pass-cell">✓ Excellent</td>
+          <td>Bouton principal (fond sombre)</td>
+        </tr>
+        <tr>
+          <td><span class="swatch" style="background:#646464"></span>#646464 gris foncé</td>
+          <td><span class="swatch" style="background:#ffffff;border-color:#ccc"></span>#ffffff blanc</td>
+          <td><strong>6.4:1</strong></td>
+          <td class="pass-cell">✓ OK</td>
+          <td>Textes secondaires sur fond blanc</td>
+        </tr>
+        <tr style="background:#fff8f8">
+          <td><span class="swatch" style="background:#8C8C8C"></span>#8C8C8C gris moyen</td>
+          <td><span class="swatch" style="background:#ffffff;border-color:#ccc"></span>#ffffff blanc</td>
+          <td><strong>3.4:1</strong></td>
+          <td class="fail-cell">✗ Insuffisant</td>
+          <td>Initiales avatar, boutons désactivés, placeholders</td>
+        </tr>
+        <tr style="background:#fff8f8">
+          <td><span class="swatch" style="background:#8C8C8C"></span>#8C8C8C gris moyen</td>
+          <td><span class="swatch" style="background:#F5F5F5;border-color:#ccc"></span>#F5F5F5 gris clair</td>
+          <td><strong>3.0:1</strong></td>
+          <td class="fail-cell">✗ Insuffisant</td>
+          <td>Initiales avatar sur fond gris</td>
+        </tr>
+        <tr style="background:#fff8f8">
+          <td><span class="swatch" style="background:#FF5A5A"></span>#FF5A5A rouge erreur</td>
+          <td><span class="swatch" style="background:#ffffff;border-color:#ccc"></span>#ffffff blanc</td>
+          <td><strong>3.1:1</strong></td>
+          <td class="fail-cell">✗ Insuffisant</td>
+          <td>Messages d'erreur, indicateurs d'état</td>
+        </tr>
+        <tr style="background:#fff8f8">
+          <td><span class="swatch" style="background:#22AF5C"></span>#22AF5C vert succès</td>
+          <td><span class="swatch" style="background:#ffffff;border-color:#ccc"></span>#ffffff blanc</td>
+          <td><strong>2.7:1</strong></td>
+          <td class="fail-cell">✗ Insuffisant</td>
+          <td>Indicateurs de validation, bilans</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="note">Les couleurs erreur et succès sont toujours accompagnées de texte — le critère « ne pas communiquer par la couleur seule » est respecté. Mais le texte lui-même n'est pas lisible pour quelqu'un de malvoyant si le ratio est sous 4.5:1.</p>
+  </section>
+
+  <!-- ══════════════ ISSUES ══════════════ -->
+
+  <div class="severity-group" id="group-critical">
+    <div class="section-heading-wrap">
+      <h2 class="section-heading">Issues Critiques</h2>
+      <div class="intro" style="margin-bottom:0">
+        <p>Ces 6 problèmes empêchent complètement certains utilisateurs d'accomplir une action essentielle.</p>
+      </div>
+    </div>
+
+    <div class="issue open" id="A1" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge critical">Critique</span>
+        <div>
+          <div class="issue-title">A1 · Photos de profil sans description</div>
+          <div class="issue-subtitle">widget Avatar · 6+ écrans</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body open">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Un utilisateur non-voyant entend « image » sans aucun contexte lorsque l'avatar d'un médecin ou d'un patient s'affiche. Il ne sait pas de qui il s'agit. Cela concerne les écrans messagerie, choix de médecin, confirmation de conversation, accueil, présentation médecin.
+        </div>
+        <div class="criteria">
+          <span>WCAG 1.1.1 — Images informatives</span>
+          <span>WCAG 4.1.2 — Nom et rôle des composants</span>
+          <span>RGAA 1.1 — Image porteuse d'information</span>
+        </div>
+        <div class="locations">
+          <strong>Fichiers concernés</strong>
+          <span class="location-tag">bento/…/avatars/avatar.dart:24</span>
+          <span class="location-tag">messagerie_screen.dart</span>
+          <span class="location-tag">choix_medecins_screen.dart:80</span>
+          <span class="location-tag">confirmer_nouvelle_conversation_screen.dart:64</span>
+          <span class="location-tag">home_screen.dart</span>
+          <span class="location-tag">presentation_medecin.dart</span>
+        </div>
+        <pre><span class="code-comment">// ❌ Actuellement — photo sans texte alternatif</span>
+<span class="code-bad">CachedNetworkImage(
+  imageUrl: avatarUrl,
+  height: size, width: size,
+  imageBuilder: (context, imageProvider) => Container(...),
+)</span>
+
+<span class="code-comment">// ✅ Correction — ajouter semanticLabel au widget Avatar</span>
+<span class="code-good">class Avatar extends StatelessWidget {
+  const Avatar({ required this.size, this.semanticLabel, this.url, this.name, ... });
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: semanticLabel ?? name ?? 'Photo de profil',
+    image: true,
+    child: ExcludeSemantics(child: _buildImage()),
+  );
+}
+
+// À l'usage :
+Avatar(semanticLabel: 'Dr. ${medecin.nomComplet}')</span></pre>
+        <div class="fix-block">
+          <strong>Correction</strong>
+          Ajouter un paramètre <code>semanticLabel</code> au widget <code>Avatar</code> et l'utiliser à chaque appel en passant le nom complet de la personne représentée.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue open" id="A2" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge critical">Critique</span>
+        <div>
+          <div class="issue-title">A2 · Zone de tap invisible sur les documents</div>
+          <div class="issue-subtitle">document_details_screen.dart:292–354</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body open">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Dans l'écran de détail document, la visionneuse PDF et la visionneuse image s'ouvrent en plein écran par un tap. Cette zone interactive n'est pas reconnue par le lecteur d'écran : l'utilisateur ne peut pas ouvrir le document en plein écran. L'action est totalement inaccessible.
+        </div>
+        <div class="criteria">
+          <span>WCAG 4.1.2 — Nom et rôle des composants</span>
+          <span>WCAG 2.1.1 — Accessibilité au clavier / navigation</span>
+          <span>RGAA 7.1 — Script accessible</span>
+        </div>
+        <div class="locations">
+          <strong>Fichiers concernés</strong>
+          <span class="location-tag">document_details_screen.dart:292–354</span>
+        </div>
+        <pre><span class="code-comment">// ❌ Actuellement — zone de tap sans rôle ni intitulé</span>
+<span class="code-bad">GestureDetector(
+  onTap: widget.onTap,
+  child: PdfView(...),
+)</span>
+
+<span class="code-comment">// ✅ Correction — déclarer le rôle et l'intitulé</span>
+<span class="code-good">Semantics(
+  button: true,
+  label: 'Ouvrir le document en plein écran',
+  onTap: widget.onTap,
+  child: GestureDetector(
+    onTap: widget.onTap,
+    child: PdfView(...),
+  ),
+)</span></pre>
+        <div class="fix-block">
+          <strong>Correction</strong>
+          Entourer chaque zone de tap de la visionneuse avec un wrapper déclarant le rôle « bouton » et l'action « Ouvrir en plein écran ».
+        </div>
+      </div>
+    </div>
+
+    <div class="issue open" id="A3" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge critical">Critique</span>
+        <div>
+          <div class="issue-title">A3 · Case CGU non liée à son texte</div>
+          <div class="issue-subtitle">login_phone_screen.dart:168–199</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body open">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          La case à cocher d'acceptation des CGU est affichée à côté du texte des conditions, mais sans lien programmatique entre les deux. Le lecteur d'écran annonce uniquement « case à cocher, non cochée » — sans préciser qu'il s'agit d'accepter les conditions d'utilisation.
+        </div>
+        <div class="criteria">
+          <span>WCAG 3.3.2 — Étiquettes de formulaire</span>
+          <span>WCAG 4.1.2 — Nom et rôle des composants</span>
+          <span>RGAA 11.1 — Champ avec étiquette</span>
+        </div>
+        <div class="locations">
+          <strong>Fichiers concernés</strong>
+          <span class="location-tag">login_phone_screen.dart:165–200</span>
+        </div>
+        <pre><span class="code-comment">// ❌ Actuellement — la case et son texte sont des éléments séparés</span>
+<span class="code-bad">Row(children: [
+  Checkbox(value: aAccepteLesCgu, onChanged: ...),
+  Flexible(child: Markdown(data: l10n.jAccepteLesConditionsDUtilisation)),
+])</span>
+
+<span class="code-comment">// ✅ Correction — un seul élément avec l'intitulé complet</span>
+<span class="code-good">Semantics(
+  label: l10n.jAccepteLesConditionsDUtilisation,
+  checked: aAccepteLesCgu,
+  child: InkWell(
+    onTap: () => setState(() => aAccepteLesCgu = !aAccepteLesCgu),
+    child: Row(children: [
+      ExcludeSemantics(child: Checkbox(value: aAccepteLesCgu, onChanged: ...)),
+      Flexible(child: Markdown(data: l10n.jAccepteLesConditionsDUtilisation)),
+    ]),
+  ),
+)</span></pre>
+        <div class="fix-block">
+          <strong>Correction</strong>
+          Grouper la case et son texte en un seul élément interactif qui annonce l'intitulé complet des CGU et son état coché / non coché.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue open" id="A4" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge critical">Critique</span>
+        <div>
+          <div class="issue-title">A4 · Bouton de sélection — état sélectionné non annoncé</div>
+          <div class="issue-subtitle">choix_du_profil_patient_screen.dart · choix_medecins_screen.dart</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body open">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Dans les écrans de choix de profil et de médecin, le lecteur d'écran détecte deux éléments pour la même action (le bouton et le bouton radio interne) et n'annonce pas lequel est sélectionné. La navigation est confuse et l'état de sélection est invisible.
+        </div>
+        <div class="criteria">
+          <span>WCAG 4.1.2 — Nom et rôle des composants</span>
+          <span>WCAG 1.3.1 — Information et relations</span>
+        </div>
+        <div class="locations">
+          <strong>Fichiers concernés</strong>
+          <span class="location-tag">choix_du_profil_patient_screen.dart:66–71</span>
+          <span class="location-tag">choix_medecins_screen.dart:73–78</span>
+          <span class="location-tag">bento/…/buttons/choice_list_button.dart</span>
+        </div>
+        <pre><span class="code-comment">// ✅ Correction dans choice_list_button.dart</span>
+<span class="code-good">Semantics(
+  selected: isSelected,
+  button: true,
+  child: FilledButton(
+    onPressed: onPressed,
+    child: ExcludeSemantics( // masque le bouton radio redondant
+      child: DefaultTextStyle(style: textStyle, child: child),
+    ),
+  ),
+)</span></pre>
+        <div class="fix-block">
+          <strong>Correction</strong>
+          (1) Le bouton doit exposer son état sélectionné / non sélectionné. (2) Le bouton radio visuel interne doit être masqué de la navigation pour éviter le doublon.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue open" id="A5" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge critical">Critique</span>
+        <div>
+          <div class="issue-title">A5 · Barre de progression des étapes — muette</div>
+          <div class="issue-subtitle">app/lib/widgets/primary_progress_bar.dart · Flux de connexion</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body open">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Dans le flux de connexion (étapes 1/3, 2/3, 3/3), la barre de progression est purement visuelle. Un utilisateur non-voyant ne sait pas à quelle étape il se trouve ni combien il en reste — information essentielle pour ne pas se sentir perdu.
+        </div>
+        <div class="criteria">
+          <span>WCAG 1.3.1 — Information et relations</span>
+          <span>WCAG 4.1.3 — Messages de statut</span>
+        </div>
+        <div class="locations">
+          <strong>Fichiers concernés</strong>
+          <span class="location-tag">app/lib/widgets/primary_progress_bar.dart:1–52</span>
+          <span class="location-tag">select_profile_screen.dart:59</span>
+        </div>
+        <pre><span class="code-comment">// ✅ Correction — exposer l'étape courante en texte</span>
+<span class="code-good">Semantics(
+  label: 'Étape $step sur 3',
+  child: ExcludeSemantics(
+    child: SizedBox(height: 6, width: 96, child: Row(children: [ /* inchangé */ ])),
+  ),
+)</span></pre>
+        <div class="fix-block">
+          <strong>Correction</strong>
+          Associer une étiquette textuelle « Étape X sur 3 » à la barre, visible uniquement du lecteur d'écran.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue open" id="A6" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge critical">Critique</span>
+        <div>
+          <div class="issue-title">A6 · Conversations dans la messagerie — non identifiables</div>
+          <div class="issue-subtitle">messagerie_screen.dart · Liste des conversations</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body open">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Chaque ligne de la liste messagerie est cliquable mais sans intitulé ni rôle. Le lecteur d'écran la détecte comme un élément interactif anonyme. L'utilisateur ne sait pas avec qui est la conversation, ni ce que déclenche le tap. Il ne peut pas naviguer dans la messagerie.
+        </div>
+        <div class="criteria">
+          <span>WCAG 4.1.2 — Nom et rôle des composants</span>
+          <span>WCAG 2.4.6 — Étiquettes descriptives</span>
+        </div>
+        <div class="locations">
+          <strong>Fichiers concernés</strong>
+          <span class="location-tag">messagerie_screen.dart:~205</span>
+        </div>
+        <pre><span class="code-comment">// ✅ Correction — intitulé complet de la conversation</span>
+<span class="code-good">Semantics(
+  button: true,
+  label: 'Conversation avec ${channel.name}. ${channel.lastMessage?.text ?? 'Aucun message'}',
+  child: InkWell(
+    onTap: () => context.push('/conversation/${channel.id}'),
+    child: ChannelTile(channel: channel),
+  ),
+)</span></pre>
+        <div class="fix-block">
+          <strong>Correction</strong>
+          Chaque ligne doit annoncer le nom du médecin et l'aperçu du dernier message.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ HAUTE ══ -->
+  <div class="severity-group" id="group-high">
+    <div class="section-heading-wrap">
+      <h2 class="section-heading">Issues Haute Priorité</h2>
+    </div>
+
+    <div class="issue" id="B1" data-categories="contrast">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge high">Haute</span>
+        <div>
+          <div class="issue-title">B1 · Trois couleurs avec un contraste insuffisant</div>
+          <div class="issue-subtitle">bento/lib/src/colors.dart · Utilisé globalement</div>
+          <div class="cat-tags"><span class="cat-tag contrast">Contraste & couleurs</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Ces couleurs sont difficiles à lire pour les personnes malvoyantes, daltonniennes, ou dans de mauvaises conditions d'éclairage. Le rouge erreur et le vert succès sont particulièrement problématiques car ils portent une information importante.
+        </div>
+        <ul style="margin:12px 0 0 18px;font-size:14px;line-height:1.9">
+          <li><strong>Gris #8C8C8C sur blanc</strong> → 3.4:1 · boutons désactivés, initiales avatar, placeholders</li>
+          <li><strong>Rouge erreur #FF5A5A sur blanc</strong> → 3.1:1 · messages d'erreur, indicateurs d'état</li>
+          <li><strong>Vert succès #22AF5C sur blanc</strong> → 2.7:1 · bilans, validations</li>
+        </ul>
+        <div class="criteria">
+          <span>WCAG 1.4.3 — Contraste du texte (AA)</span>
+          <span>WCAG 1.4.11 — Contraste des composants</span>
+          <span>RGAA 3.2 · 3.3 — Contraste</span>
+        </div>
+        <div class="fix-block">
+          <strong>Corrections suggérées (tokens Bento)</strong>
+          <ul style="margin:6px 0 0 16px;font-size:13px;line-height:1.9">
+            <li><code>grey</code> : #8C8C8C → <strong>#757575</strong> (4.6:1)</li>
+            <li><code>error</code> : #FF5A5A → <strong>#D93025</strong> (5.9:1)</li>
+            <li><code>valid</code> : #22AF5C → <strong>#1A7A40</strong> (5.1:1)</li>
+          </ul>
+          Ces changements affectent tous les écrans : prévoir une validation visuelle avec l'équipe design.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue" id="B2" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge high">Haute</span>
+        <div>
+          <div class="issue-title">B2 · Carte de rendez-vous lue en morceaux</div>
+          <div class="issue-subtitle">app/lib/widgets/primary_rdv_card.dart</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Le lecteur d'écran lit la carte fragment par fragment : « image · Dr. · Dupont · icône · 10 · h · 00 · Cabinet ». L'utilisateur doit reconstituer mentalement l'information au lieu d'entendre directement « Rendez-vous avec Dr. Dupont, lundi 6 mai à 10 h, Cabinet Paris ».
+        </div>
+        <div class="criteria">
+          <span>WCAG 4.1.2 — Nom et rôle des composants</span>
+          <span>WCAG 2.4.6 — Étiquettes descriptives</span>
+        </div>
+        <div class="locations">
+          <strong>Fichiers concernés</strong>
+          <span class="location-tag">app/lib/widgets/primary_rdv_card.dart</span>
+          <span class="location-tag">rendez_vous_screen.dart</span>
+          <span class="location-tag">home_screen.dart</span>
+        </div>
+        <pre><span class="code-comment">// ✅ Correction — résumé synthétique sur la carte entière</span>
+<span class="code-good">Semantics(
+  label: 'Rendez-vous avec ${rdv.medecin.nomLibelleLong}, '
+         'le ${rdv.date.toFormattedString()}, au ${rdv.cabinet.nom}',
+  button: onTap != null,
+  child: ExcludeSemantics(
+    child: FilledButton(onPressed: onTap, child: PrimaryRdvView(rdv: rdv)),
+  ),
+)</span></pre>
+        <div class="fix-block">
+          <strong>Correction</strong>
+          Associer un résumé complet à la carte entière (médecin + date + lieu) et masquer le détail interne redondant.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue" id="B3" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge high">Haute</span>
+        <div>
+          <div class="issue-title">B3 · Carte document lue en morceaux</div>
+          <div class="issue-subtitle">app/lib/widgets/primary_document_card.dart:63–130</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Même problème que B2 : la carte document est lue fragment par fragment. Les icônes SVG décoratifs sont également annoncés sans signification.
+        </div>
+        <div class="criteria">
+          <span>WCAG 1.1.1 — Images informatives</span>
+          <span>WCAG 4.1.2 — Nom et rôle des composants</span>
+        </div>
+        <div class="fix-block">
+          <strong>Correction</strong>
+          Résumé synthétique (nom + catégorie + date) sur la carte entière, contenu interne masqué. Icônes décoratifs exclus de la navigation.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue" id="B4" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge high">Haute</span>
+        <div>
+          <div class="issue-title">B4 · Champ de saisie — label non lié au champ</div>
+          <div class="issue-subtitle">bento/lib/src/inputs/text_field.dart:26–46</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Le label au-dessus du champ (ex. « Nom du document ») est un texte séparé, sans lien avec le champ. Quand l'utilisateur place le focus dans le champ, le lecteur d'écran annonce « champ texte, vide » sans mentionner à quoi il correspond.
+        </div>
+        <div class="criteria">
+          <span>WCAG 3.3.2 — Étiquettes de formulaire</span>
+          <span>WCAG 1.3.1 — Information et relations</span>
+          <span>RGAA 11.1 — Champ avec étiquette</span>
+        </div>
+        <div class="locations">
+          <strong>Fichiers concernés</strong>
+          <span class="location-tag">bento/lib/src/inputs/text_field.dart:26–46</span>
+          <span class="location-tag">upload_document_nommage_et_categorie_screen.dart:78</span>
+        </div>
+        <pre><span class="code-comment">// ❌ Actuellement — label séparé, non associé</span>
+<span class="code-bad">Column(children: [
+  Text(label, style: ...),
+  m.TextField(decoration: m.InputDecoration(hintText: hintText)),
+])</span>
+
+<span class="code-comment">// ✅ Correction — label intégré dans la décoration du champ</span>
+<span class="code-good">m.TextField(
+  decoration: m.InputDecoration(
+    labelText: label,
+    hintText: hintText,
+    floatingLabelBehavior: FloatingLabelBehavior.always,
+  ),
+)</span></pre>
+        <div class="fix-block">
+          <strong>Correction</strong>
+          Intégrer le label directement dans la décoration du champ. L'affichage visuel reste identique.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue" id="B5" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge high">Haute</span>
+        <div>
+          <div class="issue-title">B5 · Spinner de chargement invisible</div>
+          <div class="issue-subtitle">6+ écrans</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Quand une page charge, l'animation du spinner tourne en silence. Un utilisateur non-voyant croit que la page est vide ou figée et peut tenter de naviguer, recharger, ou abandonner.
+        </div>
+        <div class="criteria">
+          <span>WCAG 4.1.3 — Messages de statut</span>
+        </div>
+        <div class="locations">
+          <strong>Fichiers concernés</strong>
+          <span class="location-tag">messagerie_screen.dart:105</span>
+          <span class="location-tag">messagerie_channel_screen.dart:89</span>
+          <span class="location-tag">login_phone_validation_screen.dart:87</span>
+          <span class="location-tag">choix_medecins_screen.dart:156</span>
+          <span class="location-tag">rendez_vous_details_screen.dart:72</span>
+        </div>
+        <pre><span class="code-comment">// ✅ Nouveau widget partagé — PrimaryLoadingIndicator</span>
+<span class="code-good">Semantics(
+  label: 'Chargement en cours',
+  liveRegion: true,
+  child: CircularProgressIndicator.adaptive(),
+)</span></pre>
+        <div class="fix-block">
+          <strong>Correction</strong>
+          Créer un widget <code>PrimaryLoadingIndicator</code> réutilisable qui annonce « Chargement en cours » dès qu'il apparaît.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue" id="B6" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge high">Haute</span>
+        <div>
+          <div class="issue-title">B6 · Titre des panneaux bas de page — non structuré</div>
+          <div class="issue-subtitle">bento/lib/src/layout/bottom_sheet.dart:65</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Les panneaux du bas ont un titre, mais non marqué comme tel. Un utilisateur non-voyant ne peut pas sauter directement au titre : il doit lire tout le contenu depuis le début.
+        </div>
+        <div class="criteria">
+          <span>WCAG 2.4.6 — En-têtes et étiquettes</span>
+          <span>RGAA 9.1 — Hiérarchie des titres</span>
+        </div>
+        <pre><span class="code-comment">// ✅ Correction — marquer le titre comme titre de section</span>
+<span class="code-good">Semantics(
+  header: true,
+  child: Text(maybeTitle, style: Theme.of(context).textTheme.headlineMedium),
+)</span></pre>
+      </div>
+    </div>
+
+    <div class="issue" id="B7" data-categories="text-size">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge high">Haute</span>
+        <div>
+          <div class="issue-title">B7 · Agrandissement de texte système ignoré</div>
+          <div class="issue-subtitle">bento/lib/src/inputs/ · app/lib/widgets/ · Plusieurs écrans</div>
+          <div class="cat-tags"><span class="cat-tag text-size">Taille & lisibilité</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Environ 20 % des utilisateurs mobiles augmentent la taille du texte dans les réglages de leur téléphone. Certains composants bloquent ou limitent cet agrandissement : texte tronqué dans les boutons, débordements dans les cartes, lignes coupées. Ce problème touche bien plus d'utilisateurs que les seuls utilisateurs de lecteur d'écran.
+        </div>
+        <div class="criteria">
+          <span>WCAG 1.4.4 — Redimensionnement du texte (AA)</span>
+          <span>WCAG 1.4.10 — Reflow (AA)</span>
+          <span>RGAA 10.4 — Taille des caractères</span>
+        </div>
+        <div class="locations">
+          <strong>Risques identifiés</strong>
+          <span class="location-tag">PrimaryElevatedButton — maxLines: 1 non défendu</span>
+          <span class="location-tag">PrimaryRdvCard — layout fixe en Row</span>
+          <span class="location-tag">ChannelTile messagerie — hauteur fixe potentielle</span>
+        </div>
+        <pre><span class="code-comment">// ❌ À ne jamais faire — forcer une taille fixe</span>
+<span class="code-bad">MediaQuery(
+  data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+  child: child,
+)</span>
+
+<span class="code-comment">// ✅ Gérer le débordement plutôt que bloquer l'agrandissement</span>
+<span class="code-good">Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)
+
+Row(children: [
+  Flexible(child: Text(medecin.nom, overflow: TextOverflow.ellipsis)),
+  const SizedBox(width: 8),
+  Text(rdv.heure),
+])</span></pre>
+        <div class="fix-block">
+          <strong>Correction</strong>
+          Tester l'app à 150 % et 200 % de taille de texte (iOS + Android) et corriger les layouts cassés avec des composants flexibles.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MOYENNE ══ -->
+  <div class="severity-group" id="group-medium">
+    <div class="section-heading-wrap">
+      <h2 class="section-heading">Issues Priorité Moyenne</h2>
+    </div>
+
+    <div class="issue" id="C1" data-categories="motion">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge medium">Moyenne</span>
+        <div>
+          <div class="issue-title">C1 · Animations non désactivables</div>
+          <div class="issue-subtitle">Splash, checkin, home, step_progress_bar, document_details</div>
+          <div class="cat-tags"><span class="cat-tag motion">Animations</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          iOS et Android permettent de désactiver les animations dans les réglages (« Réduire le mouvement »). L'app ignore ce paramètre. Pour les personnes souffrant de sensibilité aux mouvements (vertiges, épilepsie photosensible), les animations Lottie, shimmer et transitions peuvent provoquer une gêne physique réelle.
+        </div>
+        <div class="criteria">
+          <span>WCAG 2.3.3 — Animation depuis des interactions (AAA)</span>
+          <span>WCAG 2.2.2 — Pause et arrêt des contenus animés</span>
+          <span>RGAA 13.8 — Contenu en mouvement</span>
+        </div>
+        <div class="locations">
+          <strong>Fichiers concernés</strong>
+          <span class="location-tag">launch_screen.dart:59,64–89</span>
+          <span class="location-tag">checkin_screen.dart:48–52</span>
+          <span class="location-tag">home_screen.dart:152–161</span>
+          <span class="location-tag">bento/…/step_progress_bar.dart:168–180</span>
+        </div>
+        <pre><span class="code-comment">// ✅ Lire le paramètre système et adapter</span>
+<span class="code-good">final reduceMotion = MediaQuery.of(context).disableAnimations;
+
+// Lottie — image statique si mouvement réduit
+reduceMotion
+  ? Image.asset('assets/images/splash_static.png')
+  : Lottie.asset('assets/lottie/splash.json', repeat: false)
+
+// Shimmer
+if (!reduceMotion) widget.shimmer(duration: 1.seconds)</span></pre>
+        <div class="fix-block">
+          <strong>Correction</strong>
+          Lire <code>MediaQuery.of(context).disableAnimations</code> et désactiver ou remplacer les animations. Envisager une extension <code>context.reduceMotion</code> pour simplifier le code.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue" id="C2" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge medium">Moyenne</span>
+        <div>
+          <div class="issue-title">C2 · Barre de progression d'étapes (Bento) — muette</div>
+          <div class="issue-subtitle">bento/lib/src/progress_indicators/step_progress_bar.dart</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Même problème que A5 mais dans le composant Bento utilisé dans les questionnaires de bilan et dépistage. À chaque passage à une nouvelle étape, aucune progression n'est annoncée.
+        </div>
+        <div class="criteria">
+          <span>WCAG 1.1.1 — Contenu non textuel</span>
+          <span>WCAG 4.1.3 — Messages de statut</span>
+        </div>
+        <div class="fix-block">
+          <strong>Correction</strong>
+          Ajouter une étiquette « Étape X sur Y » mise à jour automatiquement à chaque changement d'étape.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue" id="C3" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge medium">Moyenne</span>
+        <div>
+          <div class="issue-title">C3 · Titres de section (mois, catégories) non structurés</div>
+          <div class="issue-subtitle">rendez_vous_screen · documents_screen · bilan_details_screen</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Les en-têtes « AVRIL », « MAI » sont du texte ordinaire. Un utilisateur non-voyant ne peut pas sauter d'une section à l'autre — comme parcourir un long document sans titres.
+        </div>
+        <div class="criteria">
+          <span>WCAG 2.4.6 — En-têtes et étiquettes</span>
+          <span>WCAG 1.3.1 — Information et relations</span>
+          <span>RGAA 9.1 — Hiérarchie des titres</span>
+        </div>
+        <pre><span class="code-comment">// ✅ Correction</span>
+<span class="code-good">Semantics(
+  header: true,
+  child: Text(month.toUpperCase(), style: Theme.of(context).textTheme.titleMedium),
+)</span></pre>
+      </div>
+    </div>
+
+    <div class="issue" id="C4" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge medium">Moyenne</span>
+        <div>
+          <div class="issue-title">C4 · Images décoratives annoncées à tort</div>
+          <div class="issue-subtitle">login_phone_screen · upload_document_prevention_screen · unknown_phone_number_screen</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Plusieurs illustrations purement décoratives sont annoncées « image » par le lecteur d'écran. Ce bruit sans valeur informative fatigue l'utilisateur et ralentit sa navigation.
+        </div>
+        <div class="criteria">
+          <span>WCAG 1.1.1 — Images décoratives</span>
+          <span>RGAA 1.2 — Image de décoration</span>
+        </div>
+        <div class="locations">
+          <strong>Fichiers concernés</strong>
+          <span class="location-tag">login_phone_screen.dart:100–107</span>
+          <span class="location-tag">upload_document_prevention_screen.dart:56</span>
+          <span class="location-tag">unknown_phone_number_screen.dart:46</span>
+        </div>
+        <pre><span class="code-comment">// ✅ Masquer les images décoratives de la navigation</span>
+<span class="code-good">ExcludeSemantics(
+  child: Image.asset('assets/images/illustration.png'),
+)</span></pre>
+      </div>
+    </div>
+
+    <div class="issue" id="C5" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge medium">Moyenne</span>
+        <div>
+          <div class="issue-title">C5 · Onglets de bilan — état sélectionné non annoncé</div>
+          <div class="issue-subtitle">bilan_details_screen.dart:86–88</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Les onglets changent de couleur quand ils sont actifs, mais l'état actif n'est pas communiqué autrement que visuellement. Un utilisateur non-voyant ou daltonien ne sait pas quel onglet est ouvert.
+        </div>
+        <div class="criteria">
+          <span>WCAG 4.1.2 — Nom et rôle des composants</span>
+        </div>
+        <div class="fix-block">
+          <strong>Correction</strong>
+          Flutter's <code>TabBar</code> gère nativement l'état sélectionné avec un <code>TabController</code>. Vérifier que le wrapper d'animation personnalisé ne l'écrase pas.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue" id="C6" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge medium">Moyenne</span>
+        <div>
+          <div class="issue-title">C6 · Boutons icône sans intitulé</div>
+          <div class="issue-subtitle">bottom_sheet.dart · document_details_screen · messagerie_screen</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Les boutons « ✕ Fermer », « Partager » et l'icône IA n'ont aucun intitulé. Le lecteur d'écran annonce uniquement « bouton » — l'utilisateur doit deviner l'action par essais-erreurs.
+        </div>
+        <div class="criteria">
+          <span>WCAG 2.5.3 — Étiquette dans le nom</span>
+          <span>WCAG 4.1.2 — Nom et rôle des composants</span>
+        </div>
+        <div class="locations">
+          <strong>Fichiers concernés</strong>
+          <span class="location-tag">bento/layout/bottom_sheet.dart:73–79</span>
+          <span class="location-tag">document_details_screen.dart:367</span>
+          <span class="location-tag">messagerie_screen.dart:~325</span>
+        </div>
+        <pre><span class="code-comment">// ✅ Correction — ajouter tooltip sur chaque bouton icône</span>
+<span class="code-good">IconButton(
+  tooltip: 'Fermer',
+  onPressed: () => Navigator.of(context).pop(),
+  icon: const Icon(Icons.close),
+)</span></pre>
+      </div>
+    </div>
+
+    <div class="issue" id="C7" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge medium">Moyenne</span>
+        <div>
+          <div class="issue-title">C7 · Bouton en cours d'envoi — changement non annoncé</div>
+          <div class="issue-subtitle">app/lib/widgets/primary_elevated_button.dart:140–141</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Quand un bouton passe en état de chargement, le texte est remplacé par un spinner sans aucune annonce. L'utilisateur ne sait pas si son tap a été pris en compte.
+        </div>
+        <div class="criteria">
+          <span>WCAG 4.1.3 — Messages de statut</span>
+        </div>
+        <pre><span class="code-comment">// ✅ Correction — changer l'intitulé selon l'état</span>
+<span class="code-good">Semantics(
+  label: isLoading ? 'Chargement en cours' : title,
+  button: true,
+  enabled: onPressed != null,
+  child: ElevatedButton(onPressed: onPressed, ...),
+)</span></pre>
+      </div>
+    </div>
+
+    <div class="issue" id="C8" data-categories="text-size">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge medium">Moyenne</span>
+        <div>
+          <div class="issue-title">C8 · Zones tactiles trop petites</div>
+          <div class="issue-subtitle">Icônes, boutons secondaires, items de liste courts</div>
+          <div class="cat-tags"><span class="cat-tag text-size">Taille & lisibilité</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Apple et Google recommandent une zone tactile minimum de 44 × 44 points. Des cibles plus petites sont difficiles à atteindre pour les personnes âgées, celles ayant un tremblement des mains, ou lors d'une utilisation en mouvement.
+        </div>
+        <div class="criteria">
+          <span>WCAG 2.5.5 — Taille de la cible (AAA)</span>
+          <span>WCAG 2.5.8 — Taille minimale de cible (AA)</span>
+          <span>Apple HIG — 44×44 pt minimum</span>
+        </div>
+        <div class="locations">
+          <strong>Zones à vérifier en priorité</strong>
+          <span class="location-tag">Bouton fermer BottomSheet</span>
+          <span class="location-tag">Icônes d'action dans document_details</span>
+          <span class="location-tag">Icônes de la barre de navigation inférieure</span>
+        </div>
+        <pre><span class="code-comment">// ✅ Zone cliquable élargie manuellement si besoin</span>
+<span class="code-good">GestureDetector(
+  behavior: HitTestBehavior.opaque,
+  onTap: onTap,
+  child: Padding(
+    padding: const EdgeInsets.all(12), // zone 44dp si icône 20dp
+    child: Icon(Icons.close, size: 20),
+  ),
+)</span></pre>
+        <div class="fix-block">
+          <strong>Correction</strong>
+          Auditer toutes les zones cliquables de moins de 44 × 44 dp. Ne jamais réduire le padding par défaut des <code>IconButton</code> Flutter.
+        </div>
+      </div>
+    </div>
+
+    <div class="issue" id="C9" data-categories="cognitive">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge medium">Moyenne</span>
+        <div>
+          <div class="issue-title">C9 · Surcharge cognitive — écrans denses sans hiérarchie</div>
+          <div class="issue-subtitle">home_screen · rendez_vous_details_screen · bilan_details_screen</div>
+          <div class="cat-tags"><span class="cat-tag cognitive">Surcharge cognitive</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Plusieurs écrans accumulent de nombreuses informations au même niveau visuel : l'accueil mélange rendez-vous, médecins, bilans et raccourcis sans distinction claire. Pour les personnes ayant des troubles cognitifs, une anxiété, ou peu habituées aux apps médicales, cette densité crée de la confusion et de la fatigue.
+        </div>
+        <div class="criteria">
+          <span>WCAG 1.3.1 — Information et relations</span>
+          <span>WCAG 3.2.4 — Identification cohérente</span>
+          <span>COGA — Simplifier la présentation</span>
+        </div>
+        <div class="fix-block">
+          <strong>Recommandations</strong>
+          <ul style="margin:6px 0 0 16px;font-size:13px;line-height:1.9">
+            <li>Hiérarchiser visuellement les blocs sur l'accueil (prochain RDV en premier)</li>
+            <li>Limiter les actions primaires visibles à 1–2 par écran</li>
+            <li>Éviter les abréviations médicales sans explication</li>
+            <li>Préférer un langage courant plutôt que des termes cliniques</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="issue" id="C10" data-categories="contrast">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge medium">Moyenne</span>
+        <div>
+          <div class="issue-title">C10 · Mode sombre — contrastes non vérifiés</div>
+          <div class="issue-subtitle">Bento ThemeData dark · Tous les écrans</div>
+          <div class="cat-tags"><span class="cat-tag contrast">Contraste & couleurs</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Le mode sombre réduit la fatigue visuelle et est utilisé par une part significative des utilisateurs. Si les couleurs ne sont pas adaptées, la lisibilité peut être pire qu'en mode clair — particulièrement pour les personnes malvoyantes.
+        </div>
+        <div class="criteria">
+          <span>WCAG 1.4.3 — Contraste en mode sombre</span>
+          <span>Apple HIG — Dark Mode support</span>
+        </div>
+        <div class="fix-block">
+          <strong>À vérifier</strong>
+          <ul style="margin:6px 0 0 16px;font-size:13px;line-height:1.9">
+            <li>Recalculer tous les ratios de contraste sur fond sombre</li>
+            <li>Vérifier que les images et illustrations restent lisibles</li>
+            <li>S'assurer que les couleurs <code>error</code> et <code>valid</code> sont correctement adaptées</li>
+            <li>Tester avec le mode sombre forcé sur tous les écrans principaux</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="issue" id="C11" data-categories="cognitive">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge medium">Moyenne</span>
+        <div>
+          <div class="issue-title">C11 · Messages d'erreur insuffisants</div>
+          <div class="issue-subtitle">Formulaires de connexion · Upload de document</div>
+          <div class="cat-tags"><span class="cat-tag cognitive">Surcharge cognitive</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Quand une erreur survient (code OTP incorrect, format de fichier refusé), le message est parfois générique, positionné loin du champ concerné, ou non annoncé à un utilisateur qui ne regarde pas l'écran. Pour quelqu'un ayant un trouble cognitif ou une déficience visuelle, une erreur non identifiée précisément est une impasse.
+        </div>
+        <div class="criteria">
+          <span>WCAG 3.3.1 — Identification des erreurs</span>
+          <span>WCAG 3.3.3 — Suggestion d'erreur</span>
+          <span>RGAA 11.11 — Message d'erreur accessible</span>
+        </div>
+        <div class="fix-block">
+          <strong>Recommandations</strong>
+          <ul style="margin:6px 0 0 16px;font-size:13px;line-height:1.9">
+            <li>Placer le message d'erreur directement sous le champ concerné</li>
+            <li>Formuler en termes clairs : « Ce code est incorrect, vérifiez le SMS reçu » plutôt que « Erreur de validation »</li>
+            <li>Annoncer automatiquement les erreurs dès qu'elles apparaissent</li>
+            <li>Indiquer comment corriger l'erreur, pas seulement qu'elle existe</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ BASSE ══ -->
+  <div class="severity-group" id="group-low">
+    <div class="section-heading-wrap">
+      <h2 class="section-heading">Issues Basse Priorité</h2>
+    </div>
+
+    <div class="issue" id="D1" data-categories="screen-reader">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge low">Basse</span>
+        <div>
+          <div class="issue-title">D1 · Séparateur « • » lu à voix haute</div>
+          <div class="issue-subtitle">checkin_confirm_screen.dart:232–238</div>
+          <div class="cat-tags"><span class="cat-tag screen-reader">Lecteur d'écran</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <p style="margin-top:12px;font-size:14px">Le caractère « • » utilisé comme séparateur visuel est lu « puce » ou « bullet » — bruit inutile.</p>
+        <pre><span class="code-comment">// ✅ Masquer le caractère décoratif</span>
+<span class="code-good">ExcludeSemantics(child: Text('•', style: ...))</span></pre>
+      </div>
+    </div>
+
+    <div class="issue" id="D2" data-categories="cognitive">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge low">Basse</span>
+        <div>
+          <div class="issue-title">D2 · Texte d'erreur hardcodé (et mal orthographié)</div>
+          <div class="issue-subtitle">bilan_details_screen.dart:106</div>
+          <div class="cat-tags"><span class="cat-tag cognitive">Surcharge cognitive</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <p style="margin-top:12px;font-size:14px">Le texte <code>'Bilan non completé'</code> (accent manquant) est hardcodé. À migrer vers les chaînes de traduction.</p>
+      </div>
+    </div>
+
+    <div class="issue" id="D3" data-categories="cognitive">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge low">Basse</span>
+        <div>
+          <div class="issue-title">D3 · Swipe désactivé dans l'onboarding</div>
+          <div class="issue-subtitle">onboarding_screen.dart:68–74</div>
+          <div class="cat-tags"><span class="cat-tag cognitive">Surcharge cognitive</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <p style="margin-top:12px;font-size:14px">La navigation par glissement entre les pages de l'onboarding est désactivée. Non bloquant si les boutons fonctionnent, mais contraire aux conventions mobiles.</p>
+      </div>
+    </div>
+
+    <div class="issue" id="D4" data-categories="text-size">
+      <div class="issue-header" onclick="toggle(this)">
+        <span class="badge low">Basse</span>
+        <div>
+          <div class="issue-title">D4 · Interlignage et longueur de ligne à optimiser</div>
+          <div class="issue-subtitle">Textes longs — bilan_details, presentation_medecin, rendez_vous_details</div>
+          <div class="cat-tags"><span class="cat-tag text-size">Taille & lisibilité</span></div>
+        </div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="issue-body">
+        <div class="impact">
+          <strong>Expérience utilisateur impactée</strong>
+          Sur grand écran ou en mode paysage, certains blocs de texte s'étendent sur toute la largeur. Des lignes trop longues (plus de 75–80 caractères) fatiguent l'œil — particulièrement pour les personnes dyslexiques ou ayant des troubles de l'attention.
+        </div>
+        <div class="fix-block">
+          <strong>Recommandations</strong>
+          <ul style="margin:6px 0 0 16px;font-size:13px;line-height:1.9">
+            <li>Limiter la largeur des blocs de texte long à 65–75 caractères</li>
+            <li>Vérifier que l'interlignage est ≥ 1.5 pour les paragraphes</li>
+            <li>Ne pas justifier le texte — crée des espaces irréguliers qui gênent la lecture</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ État vide ══ -->
+  <div class="empty-state" id="empty-state">
+    <div class="empty-icon">🔍</div>
+    <p>Aucune issue dans cette catégorie.</p>
+  </div>
+
+  <!-- ══════════════ MÉTHODOLOGIE ══════════════ -->
+  <section id="methodology" data-always-visible style="margin-top: 40px;">
+    <h2 class="section-heading">Méthodologie & Prochaines étapes</h2>
+    <div class="intro">
+      <p><strong>Sources :</strong> Audit par lecture statique du code source Flutter. Critères : WCAG 2.1 niveau AA, RGAA 4.1 adapté au mobile natif, Apple HIG Accessibility, Material Design Accessibility. Les composants tiers et le mode sombre n'ont pas été testés dynamiquement.</p>
+      <p><strong>Limites :</strong> Cet audit ne remplace pas un test avec de vrais utilisateurs en situation de handicap, ni un test manuel sur appareil. Il identifie les risques — un test terrain confirmera les priorités.</p>
+    </div>
+
+    <h3>Plan d'action recommandé</h3>
+    <ol style="margin:12px 0 0 18px;font-size:14px;line-height:2.1">
+      <li><strong>Sprint 1 — Critique (A1–A6)</strong> · Corrections ciblées dans les composants partagés et les écrans login / messagerie / documents. Estimé : 3–5 jours dev.</li>
+      <li><strong>Sprint 2 — Haute (B1–B7)</strong> · Tokens couleur, Bento TextField, BottomSheet, vérification agrandissement texte. Estimé : 3–4 jours dev + 1 jour design.</li>
+      <li><strong>Test sur appareil</strong> · Session de test avec VoiceOver (iOS) et TalkBack (Android) — idéalement avec un utilisateur en situation de handicap.</li>
+      <li><strong>Sprint 3 — Moyenne (C1–C11)</strong> · Animations, zones tactiles, mode sombre, messages d'erreur. Estimé : 3–4 jours.</li>
+      <li><strong>Basse (D1–D4)</strong> · À traiter en opportunité lors du passage dans les fichiers concernés.</li>
+    </ol>
+  </section>
+
+</main>
+</div>
+
+<script>
+// ── Toggle accordion ──
+function toggle(header) {
+  const issue = header.closest('.issue');
+  const body = issue.querySelector('.issue-body');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  issue.classList.toggle('open', !isOpen);
+}
+
+// ── Tab filtering ──
+const tabs = document.querySelectorAll('.tab-btn');
+const issues = document.querySelectorAll('.issue[data-categories]');
+const groups = document.querySelectorAll('.severity-group');
+const emptyState = document.getElementById('empty-state');
+
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    const cat = tab.dataset.cat;
+
+    // Update tab states
+    tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+    tab.classList.add('active');
+    tab.setAttribute('aria-selected', 'true');
+
+    // Filter issues
+    issues.forEach(issue => {
+      const cats = issue.dataset.categories.split(' ');
+      const visible = cat === 'all' || cats.includes(cat);
+      issue.classList.toggle('hidden', !visible);
+    });
+
+    // Hide empty severity groups
+    let totalVisible = 0;
+    groups.forEach(group => {
+      const visibleIssues = group.querySelectorAll('.issue:not(.hidden)');
+      const heading = group.querySelector('.section-heading-wrap');
+      if (visibleIssues.length === 0) {
+        group.style.display = 'none';
+      } else {
+        group.style.display = '';
+        totalVisible += visibleIssues.length;
+      }
+    });
+
+    // Show/hide empty state
+    emptyState.style.display = totalVisible === 0 ? 'block' : 'none';
+
+    // Hide static sections (synthèse, contraste, méthodo) when filtering
+    document.querySelectorAll('[data-always-visible]').forEach(s => {
+      s.style.display = cat === 'all' ? '' : 'none';
+    });
+  });
+});
+</script>
+</body>
+</html>
