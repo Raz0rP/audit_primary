@@ -538,7 +538,6 @@
       </div>
       <div class="intro">
         <p>L'audit couvre les 28 écrans principaux, les composants partagés (<code>bento</code> + <code>app/lib/widgets</code>) et les tokens de typographie Bento. Il s'appuie sur une lecture statique du code.</p>
-        <p><strong>Nouveauté vs version précédente :</strong> trois issues typographiques ajoutées après analyse de <code>bento/lib/src/typography.dart</code> — les styles H7 (11 sp) et PTiny (11 sp) sont utilisés pour du contenu porteur d'information sur 12+ écrans.</p>
       </div>
       <h3>Répartition par domaine</h3>
       <div class="table-wrap">
@@ -2005,9 +2004,18 @@ sbCatBtns.forEach(btn => btn.addEventListener('click', () => {
 
 // ── Nav link highlight (click + scroll spy) ──
 sbNavLinks.forEach(link => {
-  link.addEventListener('click', () => {
+  link.addEventListener('click', (e) => {
+    // Reset filter to "all" so always-visible sections (contrastes, référentiels…) reappear
+    applyFilter('all');
     sbNavLinks.forEach(l => l.classList.remove('active'));
     link.classList.add('active');
+    // Let the browser handle the anchor scroll natively after sections are shown
+    const targetId = link.getAttribute('href').slice(1);
+    const target = document.getElementById(targetId);
+    if (target) {
+      e.preventDefault();
+      setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 10);
+    }
   });
 });
 
